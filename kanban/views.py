@@ -3,11 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.shortcuts import render, redirect, resolve_url
+from django.shortcuts import render, redirect, resolve_url, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, UpdateView, CreateView, ListView, DeleteView
 
-from .forms import UserForm, ListForm, CardForm # 追記
+from .forms import UserForm, ListForm, CardForm, CardCreateFromHomeForm 
 from .mixins import OnlyYouMixin
 from . models import List, Card # 追記
 
@@ -90,7 +90,7 @@ class CardCreateView(LoginRequiredMixin, CreateView):
     model = Card
     template_name = "kanban/cards/create.html"
     form_class = CardForm
-    success_url = reverse_lazy("kanban:cards_list") # 変更
+    success_url = reverse_lazy("kanban:cards_list") 
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -124,3 +124,17 @@ class CardDeleteView(LoginRequiredMixin, DeleteView):
 class HomeView(LoginRequiredMixin, ListView):
     model = List
     template_name = "kanban/home.html"
+
+
+class CardCreateFromHomeView(LoginRequiredMixin, CreateView): # 追加
+    model = Card
+    template_name = "kanban/cards/create.html" 
+    form_class = CardCreateFromHomeForm
+    success_url = reverse_lazy("kanban:home")
+
+    def form_valid(self, form):
+        list_pk = self.kwargs['list_pk']
+        list_instance = get_object_or_404(List, pk=list_pk)
+        form.instance.list = list_instance
+        form.instance.user = self.request.user
+        return super().form_valid(form)
